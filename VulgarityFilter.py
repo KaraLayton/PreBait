@@ -10,6 +10,8 @@ output: inputname.fa of a fasta with each exon listed as a seperate sequence
 example exonerate command:
 exonerate --model est2genome Test44.fasta /Users/josec/Desktop/NudiSilicoTest/Exonerate/acl_ref_AplCal3.0_chrUn.fa -Q DNA -T DNA --showvulgar F --showalignment F --percent 90 --verbose 0 --ryo '%qi\t%pi\t%qas\t%V\tEND\n' --fsmmemory 20G --bestn 1 > exonerate_outfile.txt
 
+This chops up the transcriptome CDS into putative exons based on the intron locations
+of aplysia. These exons are then saved as a fasta.
 """
 
 
