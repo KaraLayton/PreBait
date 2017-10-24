@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import re
 import sys
 
@@ -67,8 +67,8 @@ def writer(target_dict):
 
 def main():
     # Engine for the program.
-    # args = sys.argv[1:]
-    args=['--in','/Users/josec/Desktop/NudiPreBait/NudiSilicoTest/test444out.txt'] #For testing
+    args = sys.argv[1:]
+    #args=['--in','/Users/josec/Desktop/NudiPreBait/NudiSilicoTest/test444out.txt'] #For testing
     #Print usage if no input is put in by user
     if not args:
         print usage
