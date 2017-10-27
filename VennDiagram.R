@@ -8,12 +8,11 @@ teas<-read.csv(file="Teas_genelist.txt",header=T)
 
 geneLS<-c(fast5,nudis2,teas)
 
-#makee vector out of each column and remove empty strings
-#geneLS<-lapply(as.list(vendat),function(x) x[x !=""])
 #Print last few entries
 lapply(geneLS,tail)
 #check names
 names(geneLS)
+#Make VennDiagram with colorbrewer pretty colors
 venn.plot<-venn.diagram(geneLS,NULL,fill=brewer.pal(3,"Pastel2"))
 grid.draw(venn.plot)
 pdf("VennDiagramBaits.pdf")
