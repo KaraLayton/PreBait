@@ -73,6 +73,7 @@ Rscript VennDiagram.R
 cp VennDiagramBaits.pdf $WD/3_Aplysia_Targets/Output_3
 #This pulls out the sequences from the Aplasia_CDS file and sends them to the output of Step_3. 
 #while loop is a bit slow takes 20min.... maybe write python script for this step?
+#I put this file in the google folder so no need to execute....
 while read p ; do sed -n -e "/$p/,/>/ p" $aply_cds | sed ';$d' >>$WD/3_Aplysia_Targets/Output_3/targets.aply.fa ;done < targets_aply.txt
 #clean up the outputs
 sed -i '' "s/>.*cds_\(.\{2,20\}\..\).*/>\1/g" $WD/3_Aplysia_Targets/Output_3/targets.aply.fa
@@ -89,7 +90,7 @@ touch $WD/4_Map_Introns/Output_4/targets_ex_out.txt
 #http://mirrors.vbi.vt.edu/mirrors/ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/GCF_000002075.1_AplCal3.0_genomic.fna.gz
 unzip $WD/4_Map_Introns/acl_ref_AplCal3.0_chrUn.fa.zip
 #Run Exonerate. Run on multiple threads with GNU Parallel
-#Takes a few hours. Put Output in the template directory so you dont have to run it. 
+#Takes quite a few hours. More than 3 on my computer.
 parallel --jobs $threads exonerate --model est2genome -q targets.aply.fa -t acl_ref_AplCal3.0_chrUn.fa -Q DNA -T DNA --showvulgar F --showalignment F --verbose 0 --ryo \"%qi\\t%pi\\t%qas\\t%V\\tEND\\n\" --fsmmemory 20G --bestn 1 --querychunktotal $threads --querychunkid  >> $WD/4_Map_Introns/Output_4/targets_ex_out.txt ::: $(eval echo "{1..$threads}")
 #The formating of the exonerate output with the --ryo flag is interpreted by VulgarityFilter.py
 
