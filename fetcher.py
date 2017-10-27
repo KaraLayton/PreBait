@@ -29,10 +29,10 @@ content = ""
 counter = 0
 id_list = ""
 
-#define your accession numbers first, here it is just an example!!
-with open('/Users/josec/Desktop/NudiPreBait/1_Generate_Target_Sets/Teasdale500/Lgig500_Accession.txt','rU') as accession_file:
+#make list of genbank accesions from textfile
+with open('Lgig500_Accession.txt','rU') as accession_file:
     accs=[f.strip('\n') for f in accession_file]
-print accs
+
 for acc in accs:
 
     id_list += acc + ","

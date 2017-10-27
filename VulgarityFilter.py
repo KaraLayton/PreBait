@@ -6,12 +6,15 @@ usage = """
 Usage: VulgarityFilter.py --in exonerate_outfile.txt
 
 Parses the output of exonerate with: --ryo '%qi\t%pi\t%qas\t%V\tEND\n'
-output: inputname.fa of a fasta with each exon listed as a seperate sequence
+output: inputname.fa of a fasta with each exon listed as a seperate sequence IF the exon is >200bp.
 example exonerate command:
 exonerate --model est2genome Test44.fasta /Users/josec/Desktop/NudiSilicoTest/Exonerate/acl_ref_AplCal3.0_chrUn.fa -Q DNA -T DNA --showvulgar F --showalignment F --percent 90 --verbose 0 --ryo '%qi\t%pi\t%qas\t%V\tEND\n' --fsmmemory 20G --bestn 1 > exonerate_outfile.txt
 
-This chops up the transcriptome CDS into putative exons based on the intron locations
-of aplysia. These exons are then saved as a fasta.
+
+This chops up the sequences in the exonerate_outfile into exons and saves them (if > 200bp) as a fasta with headers:
+>Gene_exonNumber
+EXONSEQUENCE
+
 """
 
 
@@ -60,8 +63,12 @@ def writer(target_dict):
     CDS = target_dict['CDS']
     exonseq_list = splitter(CDS, vlist)
     for exon_number, exonseq in enumerate(exonseq_list):
-        outstring += (">%s_%d\n%s\n") % (target_dict['Target'], exon_number,
+        #Only keep the exon if it is over 200bp
+        if len(exonseq)>199:
+            outstring += (">%s_%d\n%s\n") % (target_dict['Target'], exon_number,
                                          exonseq)
+        else:
+            pass
     return outstring
 
 
@@ -75,11 +82,11 @@ def main():
         sys.exit(1)
     if args[0] == '--in':
         infile = args[1]
-    outfile_name = infile.replace('.txt', '.fa')
+    outfile_name = infile.replace('.txt', '_200.fa')
     outfile = open(outfile_name, 'w')
     target_list = openfile(infile)
     for target in target_list:
-        # check if target is blank
+        # check if target file is blank
         if len(target) > 2:
             target_dict = parser(target)
             # Filter to remove low ID hits
