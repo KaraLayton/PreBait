@@ -91,10 +91,25 @@ touch $WD/4_Map_Introns/Output_4/targets_ex_out.txt
 unzip $WD/4_Map_Introns/acl_ref_AplCal3.0_chrUn.fa.zip
 #Run Exonerate. Run on multiple threads with GNU Parallel
 #Takes quite a few hours. More than 3 on my computer.
+#I put a copy of this file in the Step 5 directory so you dont have to run it.
 parallel --jobs $threads exonerate --model est2genome -q targets.aply.fa -t acl_ref_AplCal3.0_chrUn.fa -Q DNA -T DNA --showvulgar F --showalignment F --verbose 0 --ryo \"%qi\\t%pi\\t%qas\\t%V\\tEND\\n\" --fsmmemory 20G --bestn 1 --querychunktotal $threads --querychunkid  >> $WD/4_Map_Introns/Output_4/targets_ex_out.txt ::: $(eval echo "{1..$threads}")
 #The formating of the exonerate output with the --ryo flag is interpreted by VulgarityFilter.py
 
 
 ##STEP 5 - Cut the Aplysia target fasta into exons using custom python script
+
 cp $WD/4_Map_Introns/Output_4/targets_ex_out.txt $WD/5_Aplysia_Exons
+cd $WD/5_Aplysia_Exons
 python $WD/PreBait/VulgarityFilter.py --in $WD/5_Aplysia_Exons/targets_ex_out.txt
+
+
+#Old step 6 Clean transcriptomes we are skipping because it does not make a difference. In other words, the transcriptome cleaning did not remove the "best hit" so the betterbest.py will still pick the same sequence, regardless of if there are other spurious sequences in the transcriptomes. 
+##STEP 6 - Map the aplysia exons onto the Nudi transcriptomes
+
+#Set up
+cp $WD/1_Generate_Target_Sets/AgalmaRuns/Transcriptomes/*.fasta $WD/6_Nudi_Exons
+#renaming file for clarity
+cp $WD/5_Aplysia_Exons/targets_ex_out_200.fa $WD/6_Nudi_Exons/Aply_exons_200.fa
+cd $WD/6_Nudi_Exons
+#Run exonerate, output is a fasta file!
+for txtm in Chr*.fasta; do parallel --jobs $threads exonerate --model est2genome -q Aply_exons_200.fa -t $txtm -Q DNA -T DNA --querychunktotal $threads --showvulgar F --showalignment F --verbose 0 --fsmmemory 20G --bestn 1 --ryo '\>%qi:TT%ti:HH%qab/qae:SS%s:PP%ps:LL%tal/%ql\n%tas\n' --querychunkid >> exons_$txtm ::: $(eval echo "{1..$threads}"); done
