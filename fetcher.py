@@ -49,3 +49,5 @@ if id_list != "":
 
 
 print content
+if len(content) < 2:
+ 	print "Nothing downloaded. Check internet connection!"

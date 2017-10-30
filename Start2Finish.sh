@@ -1,5 +1,5 @@
 ######Set the working directory and number of threads######
-wd='/Users/josec/Desktop/NudiPreBaitTest'
+WD='/Users/josec/Desktop/NudiPreBaitTest'
 threads='7'
 
 
