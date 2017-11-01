@@ -103,13 +103,42 @@ cd $WD/5_Aplysia_Exons
 python $WD/PreBait/VulgarityFilter.py --in $WD/5_Aplysia_Exons/targets_ex_out.txt
 
 
-#Old step 6 Clean transcriptomes we are skipping because it does not make a difference. In other words, the transcriptome cleaning did not remove the "best hit" so the betterbest.py will still pick the same sequence, regardless of if there are other spurious sequences in the transcriptomes. 
 ##STEP 6 - Map the aplysia exons onto the Nudi transcriptomes
+#Old step 6 Clean transcriptomes we are skipping because it does not make a difference. In other words, the transcriptome cleaning did not remove the "best hit" so the betterbest.py will still pick the same sequence, regardless of if there are other spurious sequences in the transcriptomes. 
 
 #Set up
 cp $WD/1_Generate_Target_Sets/AgalmaRuns/Transcriptomes/*.fasta $WD/6_Nudi_Exons
-#renaming file for clarity
+#Renaming file for clarity
 cp $WD/5_Aplysia_Exons/targets_ex_out_200.fa $WD/6_Nudi_Exons/Aply_exons_200.fa
 cd $WD/6_Nudi_Exons
 #Run exonerate, output is a fasta file!
-for txtm in Chr*.fasta; do parallel --jobs $threads exonerate --model est2genome -q Aply_exons_200.fa -t $txtm -Q DNA -T DNA --querychunktotal $threads --showvulgar F --showalignment F --verbose 0 --fsmmemory 20G --bestn 1 --ryo '\>%qi:TT%ti:HH%qab/qae:SS%s:PP%ps:LL%tal/%ql\n%tas\n' --querychunkid >> exons_$txtm ::: $(eval echo "{1..$threads}"); done
+for txtm in Chr*.fasta; do parallel --jobs $threads exonerate --model est2genome -q Aply_exons_200.fa -t $txtm -Q DNA -T DNA --querychunktotal $threads --showvulgar F --showalignment F --verbose 0 --fsmmemory 20G --bestn 1 --ryo '\>%qi:TT%ti:HH%qab/qae:SS%s:PP%ps:LL%tal/%ql\\n%tas\\n' --querychunkid >> exons_$txtm ::: $(eval echo "{1..$threads}"); done
+
+
+##STEP 7- Pick the 'best' hit for each exon from the (2) exonerate runs. 
+
+#Set up
+for exon_file in exons*; do cp $exon_file $WD/7_Best_Exons/${exon_file%_trinity.fasta}.fasta;done
+cd $WD/7_Best_Exons
+#Run custom python script to save best hit.
+python $WD/PreBait/BetterBest.py --exdir $PWD/
+
+
+##STEP 8- Make exon alignments
+
+#Set up
+cp *best.fasta $WD/8_Exon_Align/
+cd $WD/8_Exon_Align/
+mkdir $WD/8_Exon_Align/exon_seqs
+mkdir $WD/8_Exon_Align/blastdb
+cp $WD/1_Generate_Target_Sets/AgalmaRuns/Transcriptomes/*.fasta $WD/8_Exon_Align/blastdb
+
+#Make Blast database of each transcriptome
+for txtm in $WD/8_Exon_Align/blastdb/*.fasta; do makeblastdb -in $txtm -parse_seqids -dbtype nucl;done
+#Reciprical Megablast and return top blast hit in '10 qseqid qseq sseqid sseq pident' format
+blastn -task dc-megablast -query Chr_mag_best.fasta -db blastdb/Chr_wes_trinity.fasta -evalue 1e-20 -outfmt '10 qseqid qseq sseqid sseq pident' -max_target_seqs 1 -max_hsps 1 -num_threads $threads >> Chr_Chr_blast.txt
+blastn -task dc-megablast -query Chr_wes_best.fasta -db blastdb/Chr_mag_trinity.fasta -evalue 1e-20 -outfmt '10 qseqid qseq sseqid sseq pident' -max_target_seqs 1 -max_hsps 1 -num_threads $threads >> Chr_Chr_blast.txt
+# Parse the output and generate alignments with RBlast_Parser.py
+python $WD/PreBait/RBlast_Parser.py --btxt Chr_Chr_blast.txt
+
+

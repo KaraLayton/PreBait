@@ -5,7 +5,7 @@ import os,sys
 
 
 usage="""
-BetterBest.py --exdir Exonerate/Output/Directory 
+BetterBest.py --exdir Exonerate/Output/Directory
 This script parses the exonerate results from blasting the query(aplysia exons)
 to target (Nudi transcriptomes). This is to map the (assumed) introns in the CDS
 from the transcriptomes. The script then picks which transcriptome sequence had
@@ -25,22 +25,26 @@ if args[0] == '--exdir':
 	path = args[1]
 organisms = ['Chr_wes', 'Chr_mag']
 outpathname = "BetterChrTopHit"
+prefix="exons_"
+#Set length threshold and percent ID threshold. Anything below these thresholds will be thrown out.
+L_threshold = int("115")
+P_threshold = int("65")
 
 input_dictionary = {}
 naughty_list = []
 dup_tracker_list = []
 for organism in organisms:
     # input_seq_iterator reads fasta sequences
-    for record in SeqIO.parse("%s%s.fasta" % (path, organism), "fasta"):
+    for record in SeqIO.parse("%s%s%s.fasta" % (path,prefix,organism), "fasta"):
         # Pulls out the score, length, sequence and qlength from names in output
         # All of this info came from blasting aplysia (query) exons to target transcriptome
         # qlength is query exon length, length is target exon length
-        print record.id
         record_dict = {}
         smatch = re.search(r"SS(\d*)", record.name)
         lmatch = re.search(r"LL(\d*)/(\d*)", record.name)
         tmatch = re.search(r"TT(.*):HH", record.name)
-        exon_name = record.name.split(":")[0]
+        pmatch = re.search(r"PP(\d*)", record.name)
+    	exon_name = record.name.split(":")[0]
         txt_seq = str(tmatch.group(1))
         record_dict["exon_name"] = exon_name
         record_dict["species"] = organism
@@ -48,6 +52,7 @@ for organism in organisms:
         record_dict["score"] = int(smatch.group(1))
         record_dict["length"] = int(lmatch.group(1))
         record_dict["qlength"] = int(lmatch.group(2))
+        record_dict["pscore"] = int(pmatch.group(1))
         record_dict["seq"] = record
         # If the exon length is longer than the query(ie the real exon length)
         # then we know something is wrong, so it is thrown out later
@@ -56,6 +61,12 @@ for organism in organisms:
         # Checks if exon for this organism is in dictionary already.
         if txt_seq in dup_tracker_list:
             pass
+        #remove if exon too short
+        if record_dict["length"]<L_threshold:
+			pass
+        #remove if exon did not match aplysia close enough
+        if record_dict["pscore"]<P_threshold:
+			pass
         else:
             # If exon not in dictionary add. If there is already one, pick which one has the higher score
             try:
@@ -83,4 +94,3 @@ outname = "%s/Chr_wes_best.fasta" % (path)
 SeqIO.write(Chr_wes_best, outname, "fasta")
 outname = "%s/Chr_mag_best.fasta" % (path)
 SeqIO.write(Chr_mag_best, outname, "fasta")
-# print len(naughty_list)
