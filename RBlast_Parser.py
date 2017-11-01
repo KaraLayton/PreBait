@@ -1,6 +1,7 @@
 #!/usr/bin/python
+from Bio import AlignIO
 from Bio import SeqIO
-import re
+from Bio.Align.Applications import MafftCommandline
 import os,sys
 
 usage="""
@@ -23,6 +24,7 @@ if args[0] == '--btxt':
 	base_path = os.path.dirname(file_path)
 	seq_path = "%s/exon_seqs"%(base_path)
 	aln_path = "%s/exon_aln"%(base_path)
+	chr_exon_path ="%s/Chr_exon_names.txt"%(base_path)
 #make out-directory
 if not os.path.exists(seq_path):
 	os.mkdir(seq_path)
@@ -32,9 +34,14 @@ if not os.path.exists(aln_path):
 #Load the reciprical blast file into memory
 with open(file_path) as file_handle:
 	blines=[x.strip('\n') for x in file_handle.readlines()]
+#Load list of all Chr exons to see if there was a Rblast hit
+with open(chr_exon_path) as chr_exon_handle:
+	all_chr_exons=[x.strip('\n') for x in chr_exon_handle.readlines()]
 
-filtercount=0
-exon_name_list=[]
+
+
+Fil_Rblast_hits=[]
+throw_out=[]
 #parse each output
 for exon in blines:
 	raw_blast=exon.split(',')
@@ -43,13 +50,37 @@ for exon in blines:
 	exon_name,qseqid=exonerate_string.split(':')[0:2]
 	#Filter if too diverget or identical between Chrom spp.
 	if float(p_id)>90 and float(p_id)!=100:
-		exon_name_list.append(exon_name)
-		pass
+		Fil_Rblast_hits.append(exon)
+		with open("%s/%s.fasta"%(seq_path,exon_name),"w")as seq_handle:
+			seq_handle.write(">%s\n%s\n>%s\n%s\n"%(qseqid,qseq,sseqid,sseq))
 	else:
-		filtercount+=1
+		throw_out.append(exon_name)
 
-with open("exon_names.txt",'w') as exon_name_file:
-	for exon_name in exon_name_list:
-		exon_name_file.write("%s\n"%(exon_name))
-print filtercount
-print len(blines)-filtercount
+#Align with mafft
+outname = "%s%s/%s.fasta" % (path, outpathname, exon)
+        SeqIO.write(exon_seq_list, outname, "fasta")
+        mafft_cline = MafftCommandline(input=outname)
+        stdout, stderr = mafft_cline()
+        with open("%s%s/aligned/%s_aligned.fasta" % (path, outpathname, exon),
+                  "w") as handle:
+            handle.write(stdout)
+        align = AlignIO.read("%s%s/aligned/%s_aligned.fasta" %
+                             (path, outpathname, exon), "fasta")
+
+
+
+#Which seqs were not in the blast results? Pull out the singletons and write to txt file
+singleton_count=0
+with open("singletons.txt",'w') as singleton_file:
+	for exon_name in all_chr_exons:
+		if exon_name not in Fil_Rblast_hits and exon_name not in throw_out:
+			singleton_file.write("%s\n"%(exon_name))
+			singleton_count+=1
+
+
+
+#Print results
+print "Number of All exons %d"%len(all_chr_exons)
+print "Number of filtered rblast hits %d"%len(Fil_Rblast_hits)
+print "Number of exons filtered %d"%len(throw_out)
+print "Number of singletons %d"%singleton_count

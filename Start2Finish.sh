@@ -5,7 +5,7 @@ threads='7'
 
 ##STEP 1 - Generate the target sets
 
-#Running Agalma to find target genes. 
+#Running Agalma to find target genes.
 #scripts for running agalma are here:
 $WD/1_Generate_Target_Sets/AgalmaRuns/Nudis2AA/nudis2Commands.sh
 $WD/1_Generate_Target_Sets/AgalmaRuns/AgalmaCDSfast5/fast5Commands.sh
@@ -15,11 +15,11 @@ $WD/1_Generate_Target_Sets/AgalmaRuns/AgalmaCDSfast5/fast5Commands.sh
 cd $WD/1_Generate_Target_Sets/Teasdale500/
 #Make a list of geneids for Lotia gigantea. From table S1
 #Lgig500_geneID.txt
-#Convert to genbank accession numbers using this website: 
+#Convert to genbank accession numbers using this website:
 #https://biodbnet-abcc.ncifcrf.gov/db/db2dbRes.php
 #List of accessions to download from genbank
 #Lgig500_Accession.txt
-#download fasta sequences from Accession list by running 
+#download fasta sequences from Accession list by running
 python $WD/PreBait/fetcher.py > $WD/1_Generate_Target_Sets/Output_1/Teasdale500_Lgig_dna.fa
 
 
@@ -33,7 +33,7 @@ cp $WD/1_Generate_Target_Sets/Output_1/* $WD/2_Blast2AplyCDS/Blasting
 cd $WD/2_Blast2AplyCDS/Blasting
 
 #Download CDS of Aplysia genome 3.0 from here:
-#http://mirrors.vbi.vt.edu/mirrors/ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/    
+#http://mirrors.vbi.vt.edu/mirrors/ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/
 unzip $WD/2_Blast2AplyCDS/Aply3.0CDS/GCF_000002075.1_AplCal3.0_cds_from_genomic.fna.zip
 #Create blast database of this fasta file
 makeblastdb -in $WD/2_Blast2AplyCDS/Aply3.0CDS/GCF_000002075.1_AplCal3.0_cds_from_genomic.fna -parse_seqids -dbtype nucl
@@ -69,9 +69,9 @@ cat *.txt | sort | uniq > targets_aply.txt
 for f in *genelist.txt;do echo ${f%_genelist.txt} | cat - $f > temp && mv temp $f;done
 #Execute R script to make venndiagram.pdf and move it to outfolder
 cp $WD/PreBait/VennDiagram.R $WD/3_Aplysia_Targets/VennDiagram/
-Rscript VennDiagram.R 
+Rscript VennDiagram.R
 cp VennDiagramBaits.pdf $WD/3_Aplysia_Targets/Output_3
-#This pulls out the sequences from the Aplasia_CDS file and sends them to the output of Step_3. 
+#This pulls out the sequences from the Aplasia_CDS file and sends them to the output of Step_3.
 #while loop is a bit slow takes 20min.... maybe write python script for this step?
 #I put this file in the google folder so no need to execute....
 while read p ; do sed -n -e "/$p/,/>/ p" $aply_cds | sed ';$d' >>$WD/3_Aplysia_Targets/Output_3/targets.aply.fa ;done < targets_aply.txt
@@ -104,7 +104,7 @@ python $WD/PreBait/VulgarityFilter.py --in $WD/5_Aplysia_Exons/targets_ex_out.tx
 
 
 ##STEP 6 - Map the aplysia exons onto the Nudi transcriptomes
-#Old step 6 Clean transcriptomes we are skipping because it does not make a difference. In other words, the transcriptome cleaning did not remove the "best hit" so the betterbest.py will still pick the same sequence, regardless of if there are other spurious sequences in the transcriptomes. 
+#Old step 6 Clean transcriptomes we are skipping because it does not make a difference. In other words, the transcriptome cleaning did not remove the "best hit" so the betterbest.py will still pick the same sequence, regardless of if there are other spurious sequences in the transcriptomes.
 
 #Set up
 cp $WD/1_Generate_Target_Sets/AgalmaRuns/Transcriptomes/*.fasta $WD/6_Nudi_Exons
@@ -115,7 +115,7 @@ cd $WD/6_Nudi_Exons
 for txtm in Chr*.fasta; do parallel --jobs $threads exonerate --model est2genome -q Aply_exons_200.fa -t $txtm -Q DNA -T DNA --querychunktotal $threads --showvulgar F --showalignment F --verbose 0 --fsmmemory 20G --bestn 1 --ryo '\>%qi:TT%ti:HH%qab/qae:SS%s:PP%ps:LL%tal/%ql\\n%tas\\n' --querychunkid >> exons_$txtm ::: $(eval echo "{1..$threads}"); done
 
 
-##STEP 7- Pick the 'best' hit for each exon from the (2) exonerate runs. 
+##STEP 7- Pick the 'best' hit for each exon from the (2) exonerate runs.
 
 #Set up
 for exon_file in exons*; do cp $exon_file $WD/7_Best_Exons/${exon_file%_trinity.fasta}.fasta;done
@@ -124,21 +124,35 @@ cd $WD/7_Best_Exons
 python $WD/PreBait/BetterBest.py --exdir $PWD/
 
 
-##STEP 8- Make exon alignments
+##STEP 8- Reciprical Blast
 
 #Set up
-cp *best.fasta $WD/8_Exon_Align/
-cd $WD/8_Exon_Align/
-mkdir $WD/8_Exon_Align/exon_seqs
-mkdir $WD/8_Exon_Align/blastdb
-cp $WD/1_Generate_Target_Sets/AgalmaRuns/Transcriptomes/*.fasta $WD/8_Exon_Align/blastdb
+cp $WD/7_Best_Exons/*best.fasta $WD/8_Recip_Blast/
+cd $WD/8_Recip_Blast/
+mkdir $WD/8_Recip_Blast/blastdb
+cp $WD/1_Generate_Target_Sets/AgalmaRuns/Transcriptomes/*.fasta $WD/8_Recip_Blast/blastdb
 
+#Make a combined file of all the Chr exons names to pull out the ones that do not have a reciprical blast hit
+cat Chr_mag_best.fasta Chr_wes_best.fasta | grep ">" | sed 's/:.*//' | sed 's/\>//' > Chr_exon_names.txt
+#Make one line fasta for both best fasta to pull out 'singletons' later
+cat Chr_mag_best.fasta Chr_wes_best.fasta | awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' | sed 's/:HH.*//' > Chr_best_combined.fa
 #Make Blast database of each transcriptome
-for txtm in $WD/8_Exon_Align/blastdb/*.fasta; do makeblastdb -in $txtm -parse_seqids -dbtype nucl;done
-#Reciprical Megablast and return top blast hit in '10 qseqid qseq sseqid sseq pident' format
+for txtm in $WD/8_Recip_Blast/blastdb/*.fasta; do makeblastdb -in $txtm -parse_seqids -dbtype nucl;done
+#Reciprical Megablast and return top blast hit csv format
 blastn -task dc-megablast -query Chr_mag_best.fasta -db blastdb/Chr_wes_trinity.fasta -evalue 1e-20 -outfmt '10 qseqid qseq sseqid sseq pident' -max_target_seqs 1 -max_hsps 1 -num_threads $threads >> Chr_Chr_blast.txt
 blastn -task dc-megablast -query Chr_wes_best.fasta -db blastdb/Chr_mag_trinity.fasta -evalue 1e-20 -outfmt '10 qseqid qseq sseqid sseq pident' -max_target_seqs 1 -max_hsps 1 -num_threads $threads >> Chr_Chr_blast.txt
+
+
+##STEP 9- Exon alignments
+
+#Set Up
+cp $WD/8_Recip_Blast/Chr_Chr_blast.txt $WD/9_Exon_Align
+cp $WD/8_Recip_Blast/Chr_best_combined.fa $WD/9_Exon_Align
+cp $WD/8_Recip_Blast/Chr_exon_names.txt $WD/9_Exon_Align
+cd $WD/9_Exon_Align
+
+
 # Parse the output and generate alignments with RBlast_Parser.py
 python $WD/PreBait/RBlast_Parser.py --btxt Chr_Chr_blast.txt
-
-
+#Pull out singletons (ie seqs that did not have a hit in the reciprical blast)
+while read p; do echo $p; done <Chr_Chr_blast.txt > singletons.fa
