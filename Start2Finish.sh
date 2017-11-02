@@ -103,7 +103,7 @@ cd $WD/5_Aplysia_Exons
 python $WD/PreBait/VulgarityFilter.py --in $WD/5_Aplysia_Exons/targets_ex_out.txt
 
 
-##STEP 6 - Map the aplysia exons onto the Nudi transcriptomes
+##STEP 6 - Cut the Nudi transcriptomes to match the aplysia exons
 #Old step 6 Clean transcriptomes we are skipping because it does not make a difference. In other words, the transcriptome cleaning did not remove the "best hit" so the betterbest.py will still pick the same sequence, regardless of if there are other spurious sequences in the transcriptomes.
 
 #Set up
@@ -143,16 +143,33 @@ blastn -task dc-megablast -query Chr_mag_best.fasta -db blastdb/Chr_wes_trinity.
 blastn -task dc-megablast -query Chr_wes_best.fasta -db blastdb/Chr_mag_trinity.fasta -evalue 1e-20 -outfmt '10 qseqid qseq sseqid sseq pident' -max_target_seqs 1 -max_hsps 1 -num_threads $threads >> Chr_Chr_blast.txt
 
 
-##STEP 9- Exon alignments
+##STEP 9- Exon Filtering
 
 #Set Up
-cp $WD/8_Recip_Blast/Chr_Chr_blast.txt $WD/9_Exon_Align
-cp $WD/8_Recip_Blast/Chr_best_combined.fa $WD/9_Exon_Align
-cp $WD/8_Recip_Blast/Chr_exon_names.txt $WD/9_Exon_Align
-cd $WD/9_Exon_Align
-
+cp $WD/8_Recip_Blast/Chr_Chr_blast.txt $WD/9_Exon_Filtering
+cp $WD/8_Recip_Blast/Chr_best_combined.fa $WD/9_Exon_Filtering
+cp $WD/8_Recip_Blast/Chr_exon_names.txt $WD/9_Exon_Filtering
+cd $WD/9_Exon_Filtering
 
 # Parse the output and generate alignments with RBlast_Parser.py
-python $WD/PreBait/RBlast_Parser.py --btxt Chr_Chr_blast.txt
+python $WD/PreBait/RBlast_Parser.py --btxt Chr_Chr_blast.txt > stats.txt
 #Pull out singletons (ie seqs that did not have a hit in the reciprical blast)
-while read p; do echo $p; done <Chr_Chr_blast.txt > singletons.fa
+while read p; do grep -A 1 $p: Chr_best_combined.fa; done <singletons.txt | sed 's/:.*//' > singletons.fa
+#Combine singletons with Filtered blast results.
+cat singletons.fa Fil_Bhits.fasta > Ktar.fa
+
+
+##STEP 10- Ktar Final outfiles
+cd $WD/10_Ktar
+cp $WD/9_Exon_Filtering/stats.txt $PWD
+cp $WD/9_Exon_Filtering/Ktar.fa $PWD
+
+#Make file of just the names of the exons targeted. Exons are named after the aplysia protein they translate into.
+cat Ktar.fa | grep ">" | sed 's/\>//' > Exon_names.txt
+#Make a file listing the genes targeted
+cat Exon_names.txt | sed 's/\..*//' | sort | uniq > Gene_names.txt
+#Add to stats file number of genes targeted
+wc -l Gene_names.txt | sed 's/ Gene_names.txt//' | sed 's/    /Number of genes kept: /'>> stats.txt
+
+
+#All Done!
