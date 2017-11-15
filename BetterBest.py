@@ -23,7 +23,6 @@ prefix="exons_"
 #Set length threshold and percent ID threshold. Anything below these thresholds will be thrown out.
 L_threshold = int("120")
 
-
 args = sys.argv[1:]
 #Print usage if no input is put in by user
 if not args:
@@ -31,7 +30,6 @@ if not args:
     sys.exit(1)
 if args[0] == '--exdir':
     path = args[1]
-
 
 input_dictionary = {}
 naughty_list = []
