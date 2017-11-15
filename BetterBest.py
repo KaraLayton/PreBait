@@ -1,8 +1,8 @@
 #!/usr/bin/python
 from Bio import SeqIO
+# import os
 import re
-import os,sys
-
+import sys
 
 usage="""
 BetterBest.py --exdir Exonerate/Output/Directory
@@ -16,19 +16,22 @@ comparing the results when aplysia was the query because it is too divergent and
 all hits are not captured in the filtered exonerate results.
 
 """
-args = sys.argv[1:]
-#Print usage if no input is put in by user
-if not args:
-	print usage
-	sys.exit(1)
-if args[0] == '--exdir':
-	path = args[1]
+####Set variables
 organisms = ['Chr_wes', 'Chr_mag']
 outpathname = "BetterChrTopHit"
 prefix="exons_"
 #Set length threshold and percent ID threshold. Anything below these thresholds will be thrown out.
-L_threshold = int("115")
-P_threshold = int("65")
+L_threshold = int("120")
+
+
+args = sys.argv[1:]
+#Print usage if no input is put in by user
+if not args:
+    print usage
+    sys.exit(1)
+if args[0] == '--exdir':
+    path = args[1]
+
 
 input_dictionary = {}
 naughty_list = []
@@ -36,6 +39,9 @@ dup_tracker_list = []
 for organism in organisms:
     # input_seq_iterator reads fasta sequences
     for record in SeqIO.parse("%s%s%s.fasta" % (path,prefix,organism), "fasta"):
+        #Dont add exon to the record_dict if it is too short
+        if len(record) < 120:
+            continue
         # Pulls out the score, length, sequence and qlength from names in output
         # All of this info came from blasting aplysia (query) exons to target transcriptome
         # qlength is query exon length, length is target exon length
@@ -43,16 +49,13 @@ for organism in organisms:
         smatch = re.search(r"SS(\d*)", record.name)
         lmatch = re.search(r"LL(\d*)/(\d*)", record.name)
         tmatch = re.search(r"TT(.*):HH", record.name)
-        pmatch = re.search(r"PP(\d*)", record.name)
     	exon_name = record.name.split(":")[0]
         txt_seq = str(tmatch.group(1))
         record_dict["exon_name"] = exon_name
         record_dict["species"] = organism
-        # record_dict["txt_seq"]=txt_seq
         record_dict["score"] = int(smatch.group(1))
         record_dict["length"] = int(lmatch.group(1))
         record_dict["qlength"] = int(lmatch.group(2))
-        record_dict["pscore"] = int(pmatch.group(1))
         record_dict["seq"] = record
         # If the exon length is longer than the query(ie the real exon length)
         # then we know something is wrong, so it is thrown out later
@@ -60,13 +63,7 @@ for organism in organisms:
             naughty_list.append(exon_name)
         # Checks if exon for this organism is in dictionary already.
         if txt_seq in dup_tracker_list:
-            pass
-        #remove if exon too short
-        if record_dict["length"]<L_threshold:
-			pass
-        #remove if exon did not match aplysia close enough
-        if record_dict["pscore"]<P_threshold:
-			pass
+            continue
         else:
             # If exon not in dictionary add. If there is already one, pick which one has the higher score
             try:
@@ -85,7 +82,7 @@ for organism in organisms:
 Chr_wes_best = []
 Chr_mag_best = []
 for value in input_dictionary.values():
-    if value['length'] > 120 and value['exon_name'] not in naughty_list:
+    if value['length'] > L_threshold and value['exon_name'] not in naughty_list:
         if value['species'] == 'Chr_wes':
             Chr_wes_best.append(value["seq"])
         else:
