@@ -1,5 +1,5 @@
 ######Set the working directory and number of threads######
-WD='/Users/josec/Desktop/NudiPreBaitTest'
+WD='/Users/josec/Desktop/NudiPreBait2'
 threads='7'
 
 
@@ -26,11 +26,10 @@ python $WD/PreBait/fetcher.py > $WD/1_Generate_Target_Sets/Output_1/Teasdale500_
 ##STEP 2 - Find the Aplysia sequence for each target gene identified in Step 1
 
 #Set up working and out directory for blast search. The blast query is the output from step1 so we will copy those files over
-mkdir $WD/2_Blast2AplyCDS
 mkdir $WD/2_Blast2AplyCDS/Output_2
 mkdir $WD/2_Blast2AplyCDS/Blasting
 cp $WD/1_Generate_Target_Sets/Output_1/* $WD/2_Blast2AplyCDS/Blasting
-cd $WD/2_Blast2AplyCDS/Blasting
+cd $WD/2_Blast2AplyCDS/Aply3.0CDS
 
 #Download CDS of Aplysia genome 3.0 from here:
 #http://mirrors.vbi.vt.edu/mirrors/ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/
@@ -42,6 +41,7 @@ aply_cds=$WD'/2_Blast2AplyCDS/Aply3.0CDS/GCF_000002075.1_AplCal3.0_cds_from_geno
 
 #tblastx for DNA queries and tblastn for protein queries. max evalue is e-20
 #List of Aplysia gene names (of the hits) printed to Nudis2_aply_blast.txt. Extraneous parts of seq name trimmed with sed command
+cd $WD/2_Blast2AplyCDS/Blasting
 tblastn -query Nudis2_Chr_wes_aa.fa -db $aply_cds -evalue 1e-20 -outfmt '6 sseqid' -max_target_seqs 1 -max_hsps 1 -num_threads $threads | sed 's/.*cds_\(.*\..*\)_.*/\1/g' > Nudis2_aply_blast.txt
 #Remove duplicate Aplysia Hits
 sort Nudis2_aply_blast.txt | uniq > Nudis2_aply_blastu.txt
@@ -107,7 +107,7 @@ python $WD/PreBait/VulgarityFilter.py --in $WD/5_Aplysia_Exons/targets_ex_out.tx
 #Old step 6 Clean transcriptomes we are skipping because it does not make a difference. In other words, the transcriptome cleaning did not remove the "best hit" so the betterbest.py will still pick the same sequence, regardless of if there are other spurious sequences in the transcriptomes.
 
 #Set up
-cp $WD/1_Generate_Target_Sets/AgalmaRuns/Transcriptomes/*.fasta $WD/6_Nudi_Exons
+cp $WD/1_Generate_Target_Sets/Transcriptomes/*.fasta $WD/6_Nudi_Exons
 #Renaming file for clarity
 cp $WD/5_Aplysia_Exons/targets_ex_out_200.fa $WD/6_Nudi_Exons/Aply_exons_200.fa
 cd $WD/6_Nudi_Exons
