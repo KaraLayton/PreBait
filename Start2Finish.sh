@@ -101,6 +101,8 @@ parallel --jobs $threads exonerate --model est2genome -q targets.aply.fa -t acl_
 cp $WD/4_Map_Introns/Output_4/targets_ex_out.txt $WD/5_Aplysia_Exons
 cd $WD/5_Aplysia_Exons
 python $WD/PreBait/VulgarityFilter.py --in $WD/5_Aplysia_Exons/targets_ex_out.txt
+#Generate file for HybPiper Reference
+python $WD/Prebait/VulgarityFilter2.py --in /Users/josec/Desktop/NudiPreBait2/5_Aplysia_Exons/targets_ex_out.txt
 
 
 ##STEP 6 - Cut the Nudi transcriptomes to match the aplysia exons
@@ -130,7 +132,7 @@ python $WD/PreBait/BetterBest.py --exdir $PWD/
 cp $WD/7_Best_Exons/*best.fasta $WD/8_Recip_Blast/
 cd $WD/8_Recip_Blast/
 mkdir $WD/8_Recip_Blast/blastdb
-cp $WD/1_Generate_Target_Sets/AgalmaRuns/Transcriptomes/*.fasta $WD/8_Recip_Blast/blastdb
+cp $WD/1_Generate_Target_Sets/Transcriptomes/*.fasta $WD/8_Recip_Blast/blastdb
 
 #Make a combined file of all the Chr exons names to pull out the ones that do not have a reciprical blast hit
 cat Chr_mag_best.fasta Chr_wes_best.fasta | grep ">" | sed 's/:.*//' | sed 's/\>//' > Chr_exon_names.txt
