@@ -4,7 +4,7 @@ from Bio import SeqIO
 import re
 import sys
 
-usage="""
+usage = """
 BetterBest.py --exdir Exonerate/Output/Directory
 This script parses the exonerate results from blasting the query(aplysia exons)
 to target (Nudi transcriptomes). This is to map the (assumed) introns in the CDS
@@ -16,15 +16,15 @@ comparing the results when aplysia was the query because it is too divergent and
 all hits are not captured in the filtered exonerate results.
 
 """
-####Set variables
+# Set variables
 organisms = ['Chr_wes', 'Chr_mag']
 outpathname = "BetterChrTopHit"
-prefix="exons_"
-#Set length threshold and percent ID threshold. Anything below these thresholds will be thrown out.
+prefix = "exons_"
+# Set length threshold and percent ID threshold. Anything below these thresholds will be thrown out.
 L_threshold = int("120")
 
 args = sys.argv[1:]
-#Print usage if no input is put in by user
+# Print usage if no input is put in by user
 if not args:
     print usage
     sys.exit(1)
@@ -36,18 +36,18 @@ naughty_list = []
 dup_tracker_list = []
 for organism in organisms:
     # input_seq_iterator reads fasta sequences
-    for record in SeqIO.parse("%s%s%s.fasta" % (path,prefix,organism), "fasta"):
-        #Dont add exon to the record_dict if it is too short
+    for record in SeqIO.parse("%s%s%s.fasta" % (path, prefix, organism), "fasta"):
+        # Dont add exon to the record_dict if it is too short
         if len(record) < 120:
             continue
-        # Pulls out the score, length, sequence and qlength from names in output
-        # All of this info came from blasting aplysia (query) exons to target transcriptome
+        # Pulls out the score, length, sequence and qlength from names in ou
+        # All of this info came from blasting aplysia (query) exons to target
         # qlength is query exon length, length is target exon length
         record_dict = {}
         smatch = re.search(r"SS(\d*)", record.name)
         lmatch = re.search(r"LL(\d*)/(\d*)", record.name)
         tmatch = re.search(r"TT(.*):HH", record.name)
-    	exon_name = record.name.split(":")[0]
+        exon_name = record.name.split(":")[0]
         txt_seq = str(tmatch.group(1))
         record_dict["exon_name"] = exon_name
         record_dict["species"] = organism
@@ -63,14 +63,15 @@ for organism in organisms:
         if txt_seq in dup_tracker_list:
             continue
         else:
-            # If exon not in dictionary add. If there is already one, pick which one has the higher score
+            # If exon not in dictionary add. If there is already one,
+            # pick which one has the higher score
             try:
                 if input_dictionary[exon_name]["score"] < record_dict["score"]:
                     input_dictionary[exon_name] = record_dict
                     dup_tracker_list.append(txt_seq)
                 else:
                     pass
-            except:
+            except KeyError:
                 input_dictionary[exon_name] = record_dict
                 dup_tracker_list.append(txt_seq)
 
