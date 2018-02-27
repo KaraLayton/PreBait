@@ -1,0 +1,6 @@
+7 # Number of threads
+/Users/josec/Desktop/PyPreBait/Txtms # Transcriptome folder path
+/Users/josec/Desktop/PyPreBait/Targets # Gene target folder path
+/Users/josec/Desktop/PyPreBait/Genome/AplCal3.0_cds.fna # Reference genome_cds path
+150 # Min Length of bait
+92 # Min % id between transcriptomes to include a bait
