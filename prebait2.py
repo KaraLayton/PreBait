@@ -4,11 +4,20 @@ import subprocess
 import sys
 import re
 
+
 from Bio import SeqIO
 # from Bio.Alphabet import SingleLetterAlphabet
 # from Bio.Seq import Seq
 # from Bio.SeqRecord import SeqRecord
 from multiprocessing import Pool
+from pathlib import Path
+
+
+#For Venn Diagrams
+from matplotlib_venn import venn3
+import numpy
+import scipy
+from matplotlib import pyplot as plt
 # from os.path import basename
 
 
@@ -20,7 +29,7 @@ def param2dict(param_path):
         plines = param_handle.readlines()
         #Removes trailing white space and description snipet from param file
         param_list = [p.split('#', 1)[0].strip(' ') for p in plines]
-        paramdict_keys = ['Threads','TxtPath','TargetPath', 'Genome', 'MinBaitLength', 'MinBaitDiv']
+        paramdict_keys = ['Threads','TxtPath','GeneTarget_path', 'Genome', 'MinBaitLength', 'MinBaitDiv']
         param_dict = dict(zip(paramdict_keys, param_list))
     return param_dict
 
@@ -53,12 +62,12 @@ def DNAorAA(seq_file):
     records = list(SeqIO.parse(seq_file,"fasta"))
     seqset = set(''.join([str(record.seq) for record in records]))
     dna = set("NATGC")
-    if '-' in seqset or 'X' in seqset:
+    nondna = seqset-dna
+    if len(nondna) > 2:
+        alphabet = 'aa'
+    elif 'X' in nondna:
         print(f"ERROR:{seq_file} has '-' or 'X' in it. Please fix and run again")
         sys.exit(1)
-    aminoacids = seqset - dna
-    if aminoacids:
-        alphabet = 'aa'
     else:
         alphabet = 'dna'
     return alphabet
@@ -81,17 +90,11 @@ def blaster(param_dict, query, blastdb_prefix, blast_out_path = None):
     blast_output = run_command(bcommand,command_out_path=blast_out_path)
     return blast_output
 
-
-param_path = '/Users/josec/Desktop/git_repos/PreBait/Example_paramfile.txt'
-param_dict = param2dict(param_path)
-geneset = "/Users/josec/Desktop/PyPreBait/Targets/Fast5_Chr_wes_dna_test.fa"
-from pathlib import Path
-
-
-def geneset2genome_blast(param_dict,geneset):
+def geneset2genome_blast(param_dict, geneset):
     """ Blasts a geneset to a genome cds like this one:
     #http://mirrors.vbi.vt.edu/mirrors/ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/
     reformats the blast results to the refseq protein IDs and removes duplicate hits. The blast cutoff is e-20
+    Output is written to file and returned by function
     """
     rawblast_output = blaster(param_dict, query = geneset, blastdb_prefix = param_dict["Genome"])
     blast_output = re.sub(r".*cds_(.*\..*)_.*",r"\1",rawblast_output)
@@ -99,6 +102,23 @@ def geneset2genome_blast(param_dict,geneset):
     blast_outpath = Path(geneset).with_suffix('.txt')
     with open(blast_outpath,'w') as out_handle:
         out_handle.write("\n".join(unique_blast_lines))
+    return unique_blast_lines
+
+def isafasta(fasta_to_check_path):
+    """Returns True if file is parsable as a fasta by BioPython"""
+    records = SeqIO.parse(fasta_to_check_path,"fasta") 
+    return any(records)
+
+def combine_genesets(param_dict):
+    """ """
+    paths = Path(param_dict["GeneTarget_path"]).glob('*')
+    geneset_dict={}
+    for fa_path in paths:
+        if isafasta(str(fa_path)):
+            set_name = fa_path.stem
+            cds_set = geneset2genome_blast(param_dict, geneset=str(fa_path))
+            geneset_dict[set_name] = cds_set
+    print(geneset_dict)
     return
 
 
@@ -106,9 +126,17 @@ def geneset2genome_blast(param_dict,geneset):
 
 
 
+param_path = '/Users/josec/Desktop/git_repos/PreBait/Example_paramfile.txt'
+param_dict = param2dict(param_path)
 
+combine_genesets(param_dict)
 
-
+# set1 = set(['A', 'B', 'C', 'D'])
+# set2 = set(['B', 'C', 'D', 'E'])
+# set3 = set(['C', 'D',' E', 'F', 'G'])
+# names = ['Set1', 'Set2', 'Set33']
+# venn3([set1, set2, set3], names)
+# plt.savefig("/Users/josec/Desktop/PyPreBait/venn.pdf")
 
 
 
