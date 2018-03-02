@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 #For Venn Diagrams
-from matplotlib_venn import venn3
+from matplotlib_venn import venn2, venn3
 import numpy
 import scipy
 from matplotlib import pyplot as plt
@@ -98,7 +98,7 @@ def geneset2genome_blast(param_dict, geneset):
     """
     rawblast_output = blaster(param_dict, query = geneset, blastdb_prefix = param_dict["Genome"])
     blast_output = re.sub(r".*cds_(.*\..*)_.*",r"\1",rawblast_output)
-    unique_blast_lines = set(blast_output.split("\n"))
+    unique_blast_lines = list(set(blast_output.split("\n")))
     blast_outpath = Path(geneset).with_suffix('.txt')
     with open(blast_outpath,'w') as out_handle:
         out_handle.write("\n".join(unique_blast_lines))
@@ -107,19 +107,46 @@ def geneset2genome_blast(param_dict, geneset):
 def isafasta(fasta_to_check_path):
     """Returns True if file is parsable as a fasta by BioPython"""
     records = SeqIO.parse(fasta_to_check_path,"fasta") 
-    return any(records)
+    try:
+        return any(records)
+    except:
+        return False
+
+def venndiagramer(venndict, outfile_path):
+    """Makes a venn diagram of dictionary values as sets with the keys as the names.
+    Detects if there are 2 or three sets. Returns error if there are not. """
+    vkeys = list(venndict.keys())
+    vin = [set(v) for v in venndict.values()]
+    if len(vkeys) == 2:
+        venn2(vin,vkeys)
+    elif len(vkeys) ==3:
+        venn3(vin,vkeys)
+    else:
+        print("Cannot make venn diagram. Need 2 or 3 groups to compare")
+        return 
+    plt.savefig(str(outfile_path))
+    return
 
 def combine_genesets(param_dict):
-    """ """
-    paths = Path(param_dict["GeneTarget_path"]).glob('*')
-    geneset_dict={}
+    """Steps 1-3 in the prebait workflow.
+    Takes gene target fasta sets and blasts them against the reference genome.
+    The blast hits are saved as the refseq protein id. These protein Ids are 
+    compared across the sets and then returned as a set. A venn
+    diagram is produced comparing the overlap between the genesets. """
+    geneset_path = Path(param_dict["GeneTarget_path"])
+    #list of geneset file paths excluding hiden files
+    paths = [str(p) for p in geneset_path.iterdir() if not p.name.startswith(".")]
+    geneset_dict = {}
     for fa_path in paths:
-        if isafasta(str(fa_path)):
-            set_name = fa_path.stem
-            cds_set = geneset2genome_blast(param_dict, geneset=str(fa_path))
+        if isafasta(fa_path):
+            set_name = Path(fa_path).stem
+            cds_set = geneset2genome_blast(param_dict, geneset=fa_path)
             geneset_dict[set_name] = cds_set
-    print(geneset_dict)
-    return
+    venndiagramer(geneset_dict, outfile_path=geneset_path.joinpath('Venn.pdf'))
+    the_set = []
+    for listi in geneset_dict.values():
+        the_set += listi
+    return set(the_set)
 
 
 
@@ -129,13 +156,17 @@ def combine_genesets(param_dict):
 param_path = '/Users/josec/Desktop/git_repos/PreBait/Example_paramfile.txt'
 param_dict = param2dict(param_path)
 
-combine_genesets(param_dict)
+target_genes = combine_genesets(param_dict)
+print(len(target_genes))
+print(target_genes)
 
-# set1 = set(['A', 'B', 'C', 'D'])
-# set2 = set(['B', 'C', 'D', 'E'])
+# set1 = set(['XP_005090798.1', 'XP_005111329.1', 'XP_005107541.1', 'XP_005109146.1', 'NP_001191497.1', 'XP_012936479.1'])
+# print(set1)
+# set2 = set(['XP_005106305.2', 'XP_005101496.1', 'XP_005100335.1', 'XP_005110818.1', 'XP_005099957.1', 'XP_005113254.1', 'XP_012940806.1', 'XP_005111045.2', 'XP_005093366.1', 'NP_001191541.1', 'XP_005100202.2', 'XP_005112795.1', 'XP_005094159.1', 'XP_005098277.1', 'XP_012935999.1', 'XP_012941843.1'])
 # set3 = set(['C', 'D',' E', 'F', 'G'])
-# names = ['Set1', 'Set2', 'Set33']
+# names = ['Fast5_Chr_wes_dna_test', 'Nudis2_Chr_wes_aa_test', 'Set33']
 # venn3([set1, set2, set3], names)
+# print([set1, set2, set3])
 # plt.savefig("/Users/josec/Desktop/PyPreBait/venn.pdf")
 
 
