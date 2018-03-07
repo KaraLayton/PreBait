@@ -1,0 +1,6 @@
+input files:
+
+1) Parameter file. Place all the values before the '#' Paths must be full paths.
+2) Assembled transcriptomes in a folder
+3) Refseq genome files in a folder. The genomic.fna and cds_from_genomic.fna files are required. Download via FTP from here: ftp.ncbi.nih.gov/genomes/refseq/
+4) Target sequence file(s). This is the set of genes in fasta format that you would like to target for exon capture. Can be genes from any organism close to the transcriptomes or reference genome. Can also be multiple organisms. The top blast result is used wiht duplicates removed so several orthologs of the same gene should be fine. 
