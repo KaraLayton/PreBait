@@ -32,8 +32,7 @@ cp $WD/1_Generate_Target_Sets/Output_1/* $WD/2_Blast2AplyCDS/Blasting
 cd $WD/2_Blast2AplyCDS/Aply3.0CDS
 
 #Download CDS of Aplysia genome 3.0 from here:
-#http://mirrors.vbi.vt.edu/mirrors/ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/
-unzip $WD/2_Blast2AplyCDS/Aply3.0CDS/GCF_000002075.1_AplCal3.0_cds_from_genomic.fna.zip
+#curl -O ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/GCF_000002075.1_AplCal3.0_cds_from_genomic.fna.gz
 #Create blast database of this fasta file
 makeblastdb -in $WD/2_Blast2AplyCDS/Aply3.0CDS/GCF_000002075.1_AplCal3.0_cds_from_genomic.fna -parse_seqids -dbtype nucl
 #Path to the Aplysia CDS database
@@ -87,12 +86,15 @@ mkdir Output_4
 cp $WD/3_Aplysia_Targets/Output_3/targets.aply.fa $WD/4_Map_Introns/
 touch $WD/4_Map_Introns/Output_4/targets_ex_out.txt
 #Download Genome of Aplysia genome 3.0 from here:
+#curl -O ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/GCF_000002075.1_AplCal3.0_genomic.fna.gz
+unzip $WD/4_Map_Introns/acl_ref_AplCal3.0_chrUn.fa.zip
+
 #http://mirrors.vbi.vt.edu/mirrors/ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/GCF_000002075.1_AplCal3.0_genomic.fna.gz
 unzip $WD/4_Map_Introns/acl_ref_AplCal3.0_chrUn.fa.zip
 #Run Exonerate. Run on multiple threads with GNU Parallel
 #Takes quite a few hours. More than 3 on my computer.
 #I put a copy of this file in the Step 5 directory so you dont have to run it.
-parallel --jobs $threads exonerate --model est2genome -q targets.aply.fa -t acl_ref_AplCal3.0_chrUn.fa -Q DNA -T DNA --showvulgar F --showalignment F --verbose 0 --ryo \"%qi\\t%pi\\t%qas\\t%V\\tEND\\n\" --fsmmemory 20G --bestn 1 --querychunktotal $threads --querychunkid  >> $WD/4_Map_Introns/Output_4/targets_ex_out.txt ::: $(eval echo "{1..$threads}")
+parallel --jobs $threads exonerate --model est2genome -q targets.aply.fa -t acl_ref_AplCal3.0_chrUn.fa -Q DNA -T DNA --showvulgar F --showalignment F --softmasktarget T --verbose 0 --ryo \"%qi\\t%pi\\t%qas\\t%V\\tEND\\n\" --fsmmemory 20G --bestn 1 --querychunktotal $threads --querychunkid  >> $WD/4_Map_Introns/Output_4/targets_ex_out.txt ::: $(eval echo "{1..$threads}")
 #The formating of the exonerate output with the --ryo flag is interpreted by VulgarityFilter.py
 
 

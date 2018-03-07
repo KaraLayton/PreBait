@@ -6,9 +6,6 @@ import re
 
 
 from Bio import SeqIO
-# from Bio.Alphabet import SingleLetterAlphabet
-# from Bio.Seq import Seq
-# from Bio.SeqRecord import SeqRecord
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -18,7 +15,6 @@ from matplotlib_venn import venn2, venn3
 import numpy
 import scipy
 from matplotlib import pyplot as plt
-# from os.path import basename
 
 
 
@@ -29,26 +25,9 @@ def param2dict(param_path):
         plines = param_handle.readlines()
         #Removes trailing white space and description snipet from param file
         param_list = [p.split('#', 1)[0].strip(' ') for p in plines]
-        paramdict_keys = ['Threads','TxtPath','GeneTarget_path', 'Genome', 'MinBaitLength', 'MinBaitDiv']
+        paramdict_keys = ['Threads','TxtPath','GeneTarget_path', 'Genome_CDS', 'Genome_fa', 'MinBaitLength', 'MinBaitDiv']
         param_dict = dict(zip(paramdict_keys, param_list))
     return param_dict
-
-def run_command(command, command_out_path=None):
-    """Runs command in subprocess. Prints error if commmand did not run. 
-    if outpath given it will print output there, otherwise this function returns it. """
-    command_output = subprocess.getstatusoutput(command)
-    if command_output[0]:
-        print(f"{command} Failed")
-        sys.exit(1)
-    if command_out_path:
-        with open(command_out_path, "w") as out_handle:
-            out_handle.write(command_output[1])
-    return command_output[1]
-
-def run_command_parallel(command, num_threads):
-    p = Pool(num_threads)
-    p.map(run_command, command)
-    return 
 
 def seqname_lister(seq_file):
     """Reads all of the names in a fasta file and returns a list"""
@@ -83,7 +62,7 @@ def blaster(param_dict, query, blastdb_prefix, blast_out_path = None):
     threads = param_dict["Threads"]
     #create blast database if there is none
     if not Path(blastdb_prefix+".nin").exists():
-        dbcommand = f"makeblastdb -in {blastdb_prefix} -parse_seqids -dbtype nucl"
+        dbcommand = f"makeblastdb -in {blastdb_prefix} -dbtype nucl"
         run_command(dbcommand)
     #Run Blast
     bcommand = f"{blast_prog} -query {query} -db {blastdb_prefix} -evalue 1e-20 -outfmt '6 sseqid' -max_target_seqs 1 -max_hsps 1 -num_threads {threads}"
@@ -96,8 +75,8 @@ def geneset2genome_blast(param_dict, geneset):
     reformats the blast results to the refseq protein IDs and removes duplicate hits. The blast cutoff is e-20
     Output is written to file and returned by function
     """
-    rawblast_output = blaster(param_dict, query = geneset, blastdb_prefix = param_dict["Genome"])
-    blast_output = re.sub(r".*cds_(.*\..*)_.*",r"\1",rawblast_output)
+    blast_output = blaster(param_dict, query = geneset, blastdb_prefix = param_dict["Genome_CDS"])
+    # blast_output = re.sub(r".*cds_(.*\..*)_.*",r"\1",rawblast_output)
     unique_blast_lines = list(set(blast_output.split("\n")))
     blast_outpath = Path(geneset).with_suffix('.txt')
     with open(blast_outpath,'w') as out_handle:
@@ -127,6 +106,30 @@ def venndiagramer(venndict, outfile_path):
     plt.savefig(str(outfile_path))
     return
 
+def fetchseq(names_tofetch, seqfile):
+    """searches for a list of names in fasta seqfile and returns them as a biopython SeqIO records"""
+    seq_dict = SeqIO.to_dict(SeqIO.parse(seqfile, "fasta"))
+    fetched_records = [seq_dict[name] for name in names_tofetch]
+    return fetched_records
+
+def run_command(command, command_out_path=None):
+    """Runs command in subprocess. Prints error if commmand did not run. 
+    if outpath given it will print output there, otherwise this function returns it. """
+    command_output = subprocess.getstatusoutput(command)
+    if command_output[0]:
+        print(f"{command} Failed")
+        sys.exit(1)
+    if command_out_path:
+        with open(command_out_path, "w") as out_handle:
+            out_handle.write(command_output[1])
+    return command_output[1]
+
+# def run_command_parallel(command, num_threads):
+#     p = Pool(num_threads)
+#     p.map(run_command, command)
+#     return 
+
+
 def combine_genesets(param_dict):
     """Steps 1-3 in the prebait workflow.
     Takes gene target fasta sets and blasts them against the reference genome.
@@ -146,28 +149,30 @@ def combine_genesets(param_dict):
     the_set = []
     for listi in geneset_dict.values():
         the_set += listi
-    return set(the_set)
+    target_genes = set(the_set)
+    fetched_records = fetchseq(names_tofetch = target_genes, seqfile = param_dict["Genome_CDS"])
+    targets_path = str(geneset_path.joinpath("combined_targets.fasta"))
+    SeqIO.write(fetched_records, targets_path, "fasta")
+    return targets_path
 
+def intronerator(param_dict, target_CDS):
+    """Runs exonerate to find exon boundry sites on target genes given a reference genome. 
+    The output is a "roll your own format" string from exonerate that will be parsed later """
+    threads = int(param_dict["Threads"])
+    exonerate_command_prefix = f'exonerate --model est2genome -q {target_CDS} -t {param_dict["Genome_fa"]} -Q DNA -T DNA --showvulgar F --showalignment F --softmasktarget T --verbose 0 --ryo \"%qi\\t%pi\\t%qas\\t%V\\tEND\\n\" --fsmmemory 20G --bestn 1 --querychunktotal {threads} --querychunkid '
+    exonerate_commands = [exonerate_command_prefix+str(i+1) for i in range((int(threads)))]
+    p = Pool(threads)
+    intron_targets = p.map(run_command, exonerate_commands)
+    return introterate_out
 
-
-
-
+#Testing Below this line:
 
 param_path = '/Users/josec/Desktop/git_repos/PreBait/Example_paramfile.txt'
 param_dict = param2dict(param_path)
+targets_path = '/Users/josec/Desktop/PyPreBait/TestTargets/combined_targets.fasta'
 
-target_genes = combine_genesets(param_dict)
-print(len(target_genes))
-print(target_genes)
+introterate_out =intronerator(param_dict, target_CDS = targets_path)
 
-# set1 = set(['XP_005090798.1', 'XP_005111329.1', 'XP_005107541.1', 'XP_005109146.1', 'NP_001191497.1', 'XP_012936479.1'])
-# print(set1)
-# set2 = set(['XP_005106305.2', 'XP_005101496.1', 'XP_005100335.1', 'XP_005110818.1', 'XP_005099957.1', 'XP_005113254.1', 'XP_012940806.1', 'XP_005111045.2', 'XP_005093366.1', 'NP_001191541.1', 'XP_005100202.2', 'XP_005112795.1', 'XP_005094159.1', 'XP_005098277.1', 'XP_012935999.1', 'XP_012941843.1'])
-# set3 = set(['C', 'D',' E', 'F', 'G'])
-# names = ['Fast5_Chr_wes_dna_test', 'Nudis2_Chr_wes_aa_test', 'Set33']
-# venn3([set1, set2, set3], names)
-# print([set1, set2, set3])
-# plt.savefig("/Users/josec/Desktop/PyPreBait/venn.pdf")
 
 
 

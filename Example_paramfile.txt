@@ -1,6 +1,7 @@
 7 # Number of threads
 /Users/josec/Desktop/PyPreBait/Txtms # Transcriptome folder path
 /Users/josec/Desktop/PyPreBait/TestTargets # Gene target folder path
-/Users/josec/Desktop/PyPreBait/Genome/AplCal3.0_cds.fna # Reference genome_cds path must have header like this;"NW_004797291.1_cds_XP_005090798.1_2136"
+/Users/josec/Desktop/PyPreBait/Genome/GCF_000002075.1_AplCal3.0_cds_from_genomic.fna # Refseq_cds path 
+/Users/josec/Desktop/PyPreBait/Genome/GCF_000002075.1_AplCal3.0_genomic.fna # Refseq genome
 150 # Min Length of bait
 92 # Min % id between transcriptomes to include a bait
