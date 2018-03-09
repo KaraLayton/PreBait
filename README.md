@@ -1,6 +1,7 @@
 # PreBait
 
-Walkthrough of bait design from Agalma output.
+NEED TO UPDTATTE WHEN DONE WITH NEW VERSION
+Wlkthrough of bait design from Agalma output.
 
 ###########################################################
 
