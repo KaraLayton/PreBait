@@ -162,16 +162,30 @@ def intronerator(param_dict, target_CDS):
     intron_targets = p.map(run_command, exonerate_commands)
     return introterate_out
 
-#Testing Below this line:
 def main():
-    param_path = '/Users/josec/Desktop/git_repos/PreBait/Example_paramfile.txt'
-    param_dict = param2dict(param_path)
-    targets_path = '/Users/josec/Desktop/PyPreBait/TestTargets/combined_targets.fasta'
+    # Read parameterfile path from user or print help message
+    args = sys.argv[1:]
+    # args = ["--param", "/Users/josec/Desktop/git_repos/PreBait/Example_paramfile.txt"]
+    usage = '\nusage: python3 /Path/2/prebait2.py --param parameters.txt\n'
+    if not args:
+        print(usage)
+        sys.exit(1)
+    if args[0] == '--param':
+        paramfile_path = args[1]
+    else:
+        print(usage)
+        sys.exit(1)
 
-    #Steps. Comment out to skip
+    # Run the pipeline
+    param_dict = param2dict(paramfile_path)
     combine_genesets(param_dict)
-    introterate_out =intronerator(param_dict, target_CDS = targets_path)
-    print(introterate_out)
+
+
+    #Testing Below this line:3
+    
+    # targets_path = '/Users/josec/Desktop/PyPreBait/TestTargets/combined_targets.fasta'
+    # introterate_out =intronerator(param_dict, target_CDS = targets_path)
+    # print(introterate_out)
 
 if __name__ == '__main__':
     main()

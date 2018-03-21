@@ -1,32 +1,45 @@
 # PreBait
+Use transcriptomes and a related reference genome to create bait sequences to enrich your favorite genes with sequence capture. 
 
+## Usage:
 
+"""
+python3 /Path/2/prebait2.py --param parameters.txt
+"""
 
-# Dependencies:
+## Dependencies:
 
-Python3 libraries:
-biopython (1.70)
-matplotlib (2.0.2)
-matplotlib-venn (0.11.5)
-numpy (1.13.1)
-scipy (0.19.1)
++Python3 libraries:
++biopython (1.70)
++matplotlib (2.0.2)
++matplotlib-venn (0.11.5)
 
 Programs:
-blast
-exonerate
++blast
++exonerate
 
-NEED TO UPDTATTE WHEN DONE WITH NEW VERSION
-Wlkthrough of bait design from Agalma output.
+## Input files:
+
++ Parameter file. Place all the values before the '#' Paths must be full paths.
++ Assembled transcriptomes in a folder
++ Refseq genome files in a folder. The genomic.fna and cds_from_genomic.fna files are required. Download via FTP from here: ftp.ncbi.nih.gov/genomes/refseq/
+Example:
+"""
+curl -O ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/GCF_000002075.1_AplCal3.0_cds_from_genomic.fna.gz
+curl -O ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/GCF_000002075.1_AplCal3.0_genomic.fna.gz
+
+"""
++ Target sequence file(s). See example in TestTargets folder. This is the set of genes in fasta format that you would like to target for exon capture. Can be genes from any organism close to the transcriptomes or reference genome. Can also be multiple organisms. The top blast result is used wiht duplicates removed so several orthologs of the same gene should be fine. 
+
+
 
 ###########################################################
 
-Clone the scripts into the PreBait folder with this:
-
-https://github.com/ignacio3437/PreBait.git
+NEED TO UPDATE WHEN DONE WITH NEW VERSION
+Walkthrough of bait design from Agalma output.
 
 Make sure to set the number of threads and folder location in Start2Finish.sh
 
-###########################################################
 
 Directories starting with a number are the steps taken to get to the final baitset file that was sent to MycroArray for bait design and synthesis. Each of these directories has an outfolder which is the input for the next step.
 
