@@ -171,7 +171,7 @@ def main():
     #Steps. Comment out to skip
     combine_genesets(param_dict)
     introterate_out =intronerator(param_dict, target_CDS = targets_path)
-
+    print(introterate_out)
 
 if __name__ == '__main__':
     main()
