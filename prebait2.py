@@ -3,13 +3,10 @@ import os
 import subprocess
 import sys
 import re
-
-
-from Bio import SeqIO
 from multiprocessing import Pool
 from pathlib import Path
 
-
+from Bio import SeqIO
 #For Venn Diagrams
 from matplotlib_venn import venn2, venn3
 import numpy
@@ -166,13 +163,16 @@ def intronerator(param_dict, target_CDS):
     return introterate_out
 
 #Testing Below this line:
+def main():
+    param_path = '/Users/josec/Desktop/git_repos/PreBait/Example_paramfile.txt'
+    param_dict = param2dict(param_path)
+    targets_path = '/Users/josec/Desktop/PyPreBait/TestTargets/combined_targets.fasta'
 
-param_path = '/Users/josec/Desktop/git_repos/PreBait/Example_paramfile.txt'
-param_dict = param2dict(param_path)
-targets_path = '/Users/josec/Desktop/PyPreBait/TestTargets/combined_targets.fasta'
-
-introterate_out =intronerator(param_dict, target_CDS = targets_path)
+    #Steps. Comment out to skip
+    combine_genesets(param_dict)
+    introterate_out =intronerator(param_dict, target_CDS = targets_path)
 
 
-
+if __name__ == '__main__':
+    main()
 

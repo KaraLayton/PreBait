@@ -1,5 +1,20 @@
 # PreBait
 
+
+
+# Dependencies:
+
+Python3 libraries:
+biopython (1.70)
+matplotlib (2.0.2)
+matplotlib-venn (0.11.5)
+numpy (1.13.1)
+scipy (0.19.1)
+
+Programs:
+blast
+exonerate
+
 NEED TO UPDTATTE WHEN DONE WITH NEW VERSION
 Wlkthrough of bait design from Agalma output.
 
