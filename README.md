@@ -3,20 +3,19 @@ Use transcriptomes and a related reference genome to create bait sequences to en
 
 ## Usage:
 
-"""
+```
 python3 /Path/2/prebait2.py --param parameters.txt
-"""
-
+```
 ## Dependencies:
 
-+Python3 libraries:
-+biopython (1.70)
-+matplotlib (2.0.2)
-+matplotlib-venn (0.11.5)
+Python3 libraries:
++ biopython (1.70)
++ matplotlib (2.0.2)
++ matplotlib-venn (0.11.5)
 
 Programs:
-+blast
-+exonerate
++ blast
++ exonerate
 
 ## Input files:
 
@@ -24,11 +23,11 @@ Programs:
 + Assembled transcriptomes in a folder
 + Refseq genome files in a folder. The genomic.fna and cds_from_genomic.fna files are required. Download via FTP from here: ftp.ncbi.nih.gov/genomes/refseq/
 Example:
-"""
+```
 curl -O ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/GCF_000002075.1_AplCal3.0_cds_from_genomic.fna.gz
 curl -O ftp.ncbi.nih.gov/genomes/refseq/invertebrate/Aplysia_californica/latest_assembly_versions/GCF_000002075.1_AplCal3.0/GCF_000002075.1_AplCal3.0_genomic.fna.gz
 
-"""
+```
 + Target sequence file(s). See example in TestTargets folder. This is the set of genes in fasta format that you would like to target for exon capture. Can be genes from any organism close to the transcriptomes or reference genome. Can also be multiple organisms. The top blast result is used wiht duplicates removed so several orthologs of the same gene should be fine. 
 
 
