@@ -4,7 +4,7 @@ Use transcriptomes and a related reference genome to create bait sequences to en
 ## Usage:
 
 ```
-python3 /Path/2/prebait2.py --param parameters.txt
+python3 prebait2.py --param parameters.txt
 ```
 ## Dependencies:
 

@@ -183,9 +183,9 @@ def main():
 
     #Testing Below this line:3
     
-    # targets_path = '/Users/josec/Desktop/PyPreBait/TestTargets/combined_targets.fasta'
-    # introterate_out =intronerator(param_dict, target_CDS = targets_path)
-    # print(introterate_out)
+    targets_path = '/Users/josec/Desktop/PyPreBait/TestTargets/combined_targets.fasta'
+    introterate_out =intronerator(param_dict, target_CDS = targets_path)
+    print(introterate_out)
 
 if __name__ == '__main__':
     main()
