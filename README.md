@@ -1,3 +1,9 @@
+## DISCONTINUED
+This project will be archived as a record of Layton et al 2018 work on Chromodoris exon capture. New version of this pipeline available in agalmacap. 
+
+
+
+
 # PreBait
 Use transcriptomes and a related reference genome to create bait sequences to enrich your favorite genes with sequence capture. 
 
